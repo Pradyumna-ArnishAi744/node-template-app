@@ -46,7 +46,7 @@ const Document = sequelize.define("documents", {
         defaultValue: true,
     },
 }, {
-    timestamps: true, // ✅ fix typo (was timeStamp)
+    timestamps: true,    // show timestamps
 });
 
 module.exports = Document;
