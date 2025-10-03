@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Upload Template</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .upload-container {
+      background-color: #fff;
+      padding: 30px 40px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      width: 400px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    input[type="text"],
+    input[type="file"] {
+      width: 100%;
+      padding: 8px 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #response {
+      margin-top: 15px;
+      word-break: break-word;
+    }
+
+    #response p {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="upload-container">
+    <h2>Upload Template</h2>
+
+    <form id="uploadForm" enctype="multipart/form-data">
+      <label for="name">Template Name:</label>
+      <input type="text" id="name" name="name" required />
+
+      <label for="document">Choose DOCX File:</label>
+      <input type="file" id="document" name="document" accept=".doc,.docx" required />
+
+      <button type="submit">Upload</button>
+    </form>
+
+    <div id="response"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById("uploadForm");
+    const responseDiv = document.getElementById("response");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      responseDiv.innerHTML = "Uploading...";
+
+      const formData = new FormData(form);
+
+      try {
+        const res = await fetch("http://localhost:8000/api/templates", {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          responseDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        } else {
+          responseDiv.innerHTML = `<p>${data.error}</p>`;
+        }
+      } catch (err) {
+        responseDiv.innerHTML = `<p>Upload failed: ${err.message}</p>`;
+      }
+    });
+  </script>
+</body>
+</html>

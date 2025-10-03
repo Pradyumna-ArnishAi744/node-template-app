@@ -1,7 +1,0 @@
-/....................Install UUID package ..................../
-
-1 . npm i UUID   // "uuid": "^13.0.0"
-
-2. Used dataType for id ==> UUIDV4, // Generates a UUID v4
-
-3. TableName ===> "documents" 
