@@ -8,6 +8,8 @@ const PORT = 8000;
 
 app.use(express.json());
 app.use(logger); // custom middleware
+app.use(express.static("public"));
+
 
 // test route
 app.get("/", (req, res) => {
