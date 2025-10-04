@@ -1,6 +1,9 @@
 const Template = require("../models/template");
 const { parseOfficeAsync } = require("officeparser");
 const path = require("path");
+const fs = require("fs").promises; // Required for reading the file buffer
+const PizZip = require("pizzip"); // Required for docxtemplater
+const Docxtemplater = require("docxtemplater"); // Required for docx manipulation
 const extractPlaceholders = require("../utilities/placeholderExtractor");
 
 // POST - Add template
@@ -48,23 +51,60 @@ exports.fillTemplate = async (req, res) => {
     const templateId = req.params.id;
     const data = req.body.data; // { Name: "John", Date: "2025-10-01", ... }
 
-    if (!data) return res.status(400).json({ error: "Data for placeholders required" });
+    if (!data || typeof data !== 'object' || Object.keys(data).length === 0) {
+      return res.status(400).json({ error: "Data for placeholders required and must be an object" });
+    }
 
     // Fetch template
     const template = await Template.findByPk(templateId);
     if (!template) return res.status(404).json({ error: "Template not found" });
 
-    let filledText = template.text;
+    // --- DOCX Generation Logic ---
 
-    // Replace placeholders
-    for (const [key, value] of Object.entries(data)) {
-      const regex = new RegExp(`{{${key}}}`, "g");
-      filledText = filledText.replace(regex, value);
-    }
+    // 1. Load the original document file
+    const docPath = template.document; 
+    // Correctly join path relative to current working directory (project root)
+    const absoluteDocPath = path.join(process.cwd(), docPath); 
+    const docBuffer = await fs.readFile(absoluteDocPath); 
 
-    res.json({ filledText });
+    // 2. Initialize docxtemplater with the file buffer
+    const zip = new PizZip(docBuffer);
+    const doc = new Docxtemplater(zip, {
+      paragraphLoop: true,
+      linebreaks: true,
+      // Explicitly define delimiters to help the parser handle potential XML splits
+      delimiters: {
+        start: '{{',
+        end: '}}',
+      },
+    });
+    
+    // 3. Set the data and render 
+    doc.setData(data); // Note: Docxtemplater suggests using .render(data) directly, but this is fine for now
+    doc.render();
+
+    // 4. Get the output buffer of the filled document
+    const buf = doc.getZip().generate({
+      type: "nodebuffer",
+      mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    });
+
+    // 5. Send the file as response for download
+    const filename = `${template.name}_filled_${Date.now()}.docx`.replace(/\s/g, '_');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.send(buf);
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to fill template" });
+    let errorMessage = "Failed to fill template";
+    
+    // Check for Docxtemplater errors 
+    if (error.properties && error.properties.errors && error.properties.errors.length > 0) {
+        console.error("Docxtemplater Error:", JSON.stringify(error.properties.errors, null, 2));
+        errorMessage = `Template filling error: ${error.properties.errors[0].message}`;
+    } else {
+        console.error(error);
+    }
+    res.status(500).json({ error: errorMessage });
   }
 };
