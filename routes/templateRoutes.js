@@ -15,7 +15,11 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Routes
-router.post("/", upload.single("document"), createTemplate);
+// accept both document and optional logo
+router.post("/", upload.fields([
+  { name: "document", maxCount: 1 },
+  { name: "logo", maxCount: 1 }
+]), createTemplate);
 router.get("/", getAllTemplates);
 router.get("/:id", getTemplateById);
 

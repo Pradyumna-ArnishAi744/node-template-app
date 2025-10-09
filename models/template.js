@@ -13,6 +13,15 @@ const Template = sequelize.define("Template", {
     allowNull: false,
     validate: { notEmpty: true }
   },
+  company: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: { notEmpty: true }
+  },
+  description: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
   text: {
     type: DataTypes.TEXT,
     allowNull: false,
@@ -29,6 +38,10 @@ const Template = sequelize.define("Template", {
       notEmpty: true,
       is: /\.(docx|doc)$/i
     }
+  },
+  logo: {
+    type: DataTypes.STRING, // logo file path
+    allowNull: true
   },
   is_active: {
     type: DataTypes.BOOLEAN,
